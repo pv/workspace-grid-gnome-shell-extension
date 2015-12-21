@@ -22,6 +22,7 @@ const Main    = imports.ui.main;
 const Meta    = imports.gi.Meta;
 const St      = imports.gi.St;
 const Clutter = imports.gi.Clutter;
+const Mainloop = imports.mainloop;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me             = ExtensionUtils.getCurrentExtension();
@@ -43,7 +44,37 @@ const myWorkspaceSwitcherPopup = new Lang.Class({
 
     _init : function (settings) {
         this._settings = settings;
+
+        // if thumbnailsbox
+        this._thumbnailsBox = new Me.imports.extension.ThumbnailsBox();
+        this._thumbnailsBox._createThumbnails();
+
+        // When we animate the scale, we don't animate the requested
+        // size of the thumbnails, rather we ask for our final size and
+        // then animate within that size. This slightly simplifies the
+        // interaction with the main workspace windows (instead of
+        // constantly reallocating them to a new size, they get a new
+        // size once, then use the standard window animation code
+        // allocate the windows to their new positions), however it
+        // causes problems for drawing the background and border wrapped
+        // around the thumbnail as we animate - we can't just pack the
+        // container into a box and set style properties on the box
+        // since that box would wrap around the final size not the
+        // animating size. So instead we fake the background with an
+        // actor underneath the content and adjust the allocation of our
+        // children to leave space for the border and padding of the
+        // background actor.
+        this._thumbnailsBox._background =
+            new St.Bin({ style_class: 'workspace-thumbnails-background' });
+        this._thumbnailsBox._background.set_style('border: 1px solid rgba(128, 128, 128, 0.4); \
+                                                   border-radius: 9px; \
+                                                   padding: 11px;');
+
         this.parent();
+
+        // if thumbnailsbox
+        this._thumbnailsBox.actor.add_actor(this._thumbnailsBox._background);
+        this.actor.add_actor(this._thumbnailsBox.actor);
     },
 
     // note: this makes sure everything fits vertically and then adjust the
@@ -146,7 +177,6 @@ const myWorkspaceSwitcherPopup = new Lang.Class({
 
         for (let i = 0; i < global.screen.n_workspaces; i++) {
             let indicator = null;
-            let name = Meta.prefs_get_workspace_name(i);
 
             if (i === this._activeWorkspaceIndex &&
                    this._direction === UP) {
@@ -172,6 +202,8 @@ const myWorkspaceSwitcherPopup = new Lang.Class({
                 indicator = new St.Bin({style_class: 'ws-switcher-box'});
             }
             if (this._settings.get_boolean(Prefs.KEY_SHOW_WORKSPACE_LABELS)) {
+                let name = Meta.prefs_get_workspace_name(i);
+
                 indicator.child = new St.Label({
                     text: name,
                     style_class: 'ws-switcher-label'
@@ -181,12 +213,45 @@ const myWorkspaceSwitcherPopup = new Lang.Class({
             this._list.add_actor(indicator);
         }
 
-        let primary = Main.layoutManager.primaryMonitor;
-        let [containerMinHeight, containerNatHeight] = this._container.get_preferred_height(global.screen_width);
-        let [containerMinWidth, containerNatWidth] = this._container.get_preferred_width(containerNatHeight);
-        this._container.x = primary.x + Math.floor((primary.width - containerNatWidth) / 2);
-        this._container.y = primary.y + Main.panel.actor.height +
-                            Math.floor(((primary.height - Main.panel.actor.height) - containerNatHeight) / 2);
+        let workArea =
+            Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
+
+        // if thumbnails
+        let [containerMinHeight, containerNatHeight] =
+            this._thumbnailsBox.actor.get_preferred_height(global.screen_width);
+        let [containerMinWidth, containerNatWidth] =
+            this._thumbnailsBox.actor.get_preferred_width(containerNatHeight);
+
+        // else
+        // let [containerMinHeight, containerNatHeight] =
+        //     this._container.get_preferred_height(global.screen_width);
+        // let [containerMinWidth, containerNatWidth] =
+        //     this._container.get_preferred_width(containerNatHeight);
+
+        this._container.x = workArea.x + Math.floor((workArea.width - containerNatWidth) / 2);
+        this._container.y = workArea.y + Main.panel.actor.height +
+            Math.floor(((workArea.height - Main.panel.actor.height) -
+                        containerNatHeight) / 2);
+    },
+
+    _destroy: function () {
+        this.parent._destroy();
+
+        if (this._timeoutId)
+            Mainloop.source_remove(this._timeoutId);
+
+        this._timeoutId = 0;
+
+        // if thumbnails
+        this._thumbnailsBox._destroyThumbnails();
+        this._thumbnailsBox.destroy();
+
+        for (let i = 0; i < this._globalSignals.length; i++)
+            global.screen.disconnect(this._globalSignals[i]);
+
+        this.actor.destroy();
+
+        this.emit('destroy');
     }
 
 });
