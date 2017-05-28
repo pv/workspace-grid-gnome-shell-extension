@@ -26,14 +26,14 @@ const Clutter = imports.gi.Clutter;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me             = ExtensionUtils.getCurrentExtension();
 
-const KEY_ROWS = 'num-rows';
-const KEY_COLS = 'num-columns';
-const KEY_WRAPAROUND = 'wraparound';
-const KEY_WRAP_TO_SAME = 'wrap-to-same';
-const KEY_MAX_HFRACTION = 'max-screen-fraction';
-const KEY_MAX_HFRACTION_COLLAPSE = 'max-screen-fraction-before-collapse';
-const KEY_SHOW_WORKSPACE_LABELS = 'show-workspace-labels';
-
+const Constants = Me.imports.constants;
+const KEY_ROWS = Constants.KEY_ROWS;
+const KEY_COLS = Constants.KEY_COLS;
+const KEY_WRAPAROUND = Constants.KEY_WRAPAROUND;
+const KEY_WRAP_TO_SAME = Constants.KEY_WRAP_TO_SAME;
+const KEY_MAX_HFRACTION = Constants.KEY_MAX_HFRACTION;
+const KEY_MAX_HFRACTION_COLLAPSE = Constants.KEY_MAX_HFRACTION_COLLAPSE;
+const KEY_SHOW_WORKSPACE_LABELS = Constants.KEY_SHOW_WORKSPACE_LABELS;
 
 const WorkspaceSwitcherPopup = imports.ui.workspaceSwitcherPopup;
 
