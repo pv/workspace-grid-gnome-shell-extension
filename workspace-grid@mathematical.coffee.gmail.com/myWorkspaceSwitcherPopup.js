@@ -25,7 +25,15 @@ const Clutter = imports.gi.Clutter;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me             = ExtensionUtils.getCurrentExtension();
-const Prefs          = Me.imports.prefs;
+
+const KEY_ROWS = 'num-rows';
+const KEY_COLS = 'num-columns';
+const KEY_WRAPAROUND = 'wraparound';
+const KEY_WRAP_TO_SAME = 'wrap-to-same';
+const KEY_MAX_HFRACTION = 'max-screen-fraction';
+const KEY_MAX_HFRACTION_COLLAPSE = 'max-screen-fraction-before-collapse';
+const KEY_SHOW_WORKSPACE_LABELS = 'show-workspace-labels';
+
 
 const WorkspaceSwitcherPopup = imports.ui.workspaceSwitcherPopup;
 
@@ -171,7 +179,7 @@ const myWorkspaceSwitcherPopup = new Lang.Class({
             } else {
                 indicator = new St.Bin({style_class: 'ws-switcher-box'});
             }
-            if (this._settings.get_boolean(Prefs.KEY_SHOW_WORKSPACE_LABELS)) {
+            if (this._settings.get_boolean(KEY_SHOW_WORKSPACE_LABELS)) {
                 indicator.child = new St.Label({
                     text: name,
                     style_class: 'ws-switcher-label'
