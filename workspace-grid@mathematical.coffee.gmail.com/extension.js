@@ -483,6 +483,7 @@ const ThumbnailsBox = new Lang.Class({
         this.actor.connect('get-preferred-width', Lang.bind(this, this._getPreferredWidth));
         this.actor.connect('get-preferred-height', Lang.bind(this, this._getPreferredHeight));
         this.actor.connect('allocate', Lang.bind(this, this._allocate));
+        this.actor.connect('destroy', Lang.bind(this, this._onDestroy));
         this.actor._delegate = this;
 
         // When we animate the scale, we don't animate the requested size of the thumbnails, rather
@@ -549,9 +550,9 @@ const ThumbnailsBox = new Lang.Class({
                     Lang.bind(this, this._onDragCancelled)));
 
         this._settings = new Gio.Settings({ schema: OVERRIDE_SCHEMA });
-        this._dynamicWorkspacesId = this._settings.connect(
+        this._signals.push(this._settings.connect(
                 'changed::dynamic-workspaces',
-                Lang.bind(this, this._updateSwitcherVisibility));
+                Lang.bind(this, this._updateSwitcherVisibility)));
 
         // @@ added
         this._indicatorX = 0; // to match indicatorY
@@ -886,14 +887,11 @@ const ThumbnailsBox = new Lang.Class({
         }
     },
 
-    destroy: function () {
-        this.actor.destroy();
+    _onDestroy: function () {
         let i = this._signals.length;
         while (i--) {
-            Main.overview.disconnect(this._signals[i]);
+            Main.overview.disconnect(this._signals.pop());
         }
-        this._signals = [];
-        this._settings.disconnect(this._dynamicWorkspacesId);
     }
 });
 
